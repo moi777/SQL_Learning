@@ -162,3 +162,143 @@ ALTER TABLE player DROP COLUMN player_age; -- 删除字段
 1. 主键约束：不能重复，不能为空，即 UNIQUE + NOT NULL。
 2. 外键约束：用于确保表与表之间引用的完整性。可以重复，可以为空。
 3. 唯一性约束：使得字段在表中的数值是唯一的。
+4. NOT NULL 约束：字段不为空。
+5. DEFAULT：字段的默认值，如果在插入数据时，这个字段没有取值，则设置为默认值。
+6. CHECK 约束：检查特定字段取值范围的有效性，CHECK 的约束结果不能为 FALSE。
+
+
+
+**设计数据表的原则**
+
+核心原则是「简单复用」：
+
+1. 数据表的个数越少越好
+2. 数据表中字段的个数越少越好
+3. 数据表中联合主键的字段个数越少越好
+4. 使用主键和外键越多越好
+
+
+
+### 05丨检索数据：你还在SELECT * 么？
+
+**查询列**
+
+```
+SELECT name FROM heros; -- 查询 heros 表中的 name 列
+
+SELECT name, id FROM heros; -- 查询 heros 表中的 name 和 id 列
+
+SELECT * FROM heros; -- 查询 heros 表中的所有列
+```
+
+
+
+**起别名**
+
+```
+SELECT name AS n, hp_max AS hm, mp_max AS mm, attack_max AS am, defense_max AS dm FROM heros
+```
+
+
+
+**查询常数**
+
+```
+SELECT '王者荣耀' as platform, name FROM heros; -- 在查询结果前面增加一列字段 platform，如果常数是字符串，需要加上单引号，否则会当做字段名进行查询，如果是数值，则不需要引号
+```
+
+![img](https://tva1.sinaimg.cn/large/006y8mN6ly1g6qsmvq1ljj30cv05a3yt.jpg)
+
+**去除重复行**
+
+```
+SELECT DISTINCT attack_range FROM heros;
+
+SELECT DISTINCT attack_range, name FROM heros; -- DISTINCT 是对后面所有列名的组合去重
+```
+
+
+
+**检索排序**
+
+```
+SELECT name, hp_max FROM heros ORDER BY hp_max DESC;
+
+SELECT name, hp_max FROM heros ORDER BY mp_max, hp_max DESC; -- 递增使用 ASC，递减使用 DESC
+
+```
+
+
+
+**约束返回结果的数量**
+
+```
+SELECT name, hp_max FROM heros ORDER BY hp_max DESC LIMIT 5; -- MySQL/PostgreSQL/MariaDB/SQLite 中使用 LIMIT 关键字
+
+SELECT name, hp_max FROM heros ORDER BY hp_max DESC FETCH FIRST 5 ROWS ONLY; -- DB2 语法
+
+SELECT name, hp_max FROM heros WHERE ROWNUM <=5 ORDER BY hp_max DESC; -- Oracle 语法
+
+```
+
+
+
+**SELECT 的执行顺序**
+
+1. 关键字顺序
+
+```
+SELECT ... FROM ... WHERE ... GROUP BY ... HAVING ... ORDER BY ...
+```
+
+2. SELECT 语句的执行顺序
+
+```
+FROM > WHERE > GROUP BY > HAVING > SELECT 的字段 > DISTINCT > ORDER BY > LIMIT
+```
+
+
+
+**如何提升 SELECT 查询效率**
+
+1. 写清列名，可以减少数据表查询的网络传输量，不推荐直接使用 SELECT * 进行查询。
+2. 约束返回记录的数量。
+
+
+
+### 06丨数据过滤：SQL数据过滤都有哪些方法？
+
+在 SQL 中，可以在 WHERE 子句对条件进行筛选，经常会和比较运算符、逻辑运算符、通配符一起使用。
+
+**1. 比较运算符**
+
+```
+SELECT name, hp_max FROM heros WHERE hp_max > 6000; -- 从 heros 表中取出 hp_max > 
+6000 的记录
+
+SELECT name, hp_max FROM heros WHERE hp_max BETWEEN 5399 AND 6811; -- 从 heros 表中取出 hp_max 在 5399 和 6811 之间的记录
+
+SELECT name, hp_max FROM heros WHERE hp_max IS NULL; -- 从 heros 表中取出 hp_max 值为空的记录
+```
+
+**2. 逻辑运算符**
+
+```
+SELECT name, hp_max, mp_max FROM heros WHERE hp_max > 6000 AND mp_max > 1700 ORDER BY (hp_max+mp_max) DESC; -- AND 运算符的使用，满足所有条件的记录才会被取出
+
+SELECT name, hp_max, mp_max FROM heros WHERE ((hp_max+mp_max) > 8000 OR hp_max > 6000) AND mp_max > 1700 ORDER BY (hp_max+mp_max) DESC; -- OR 运算符的使用，满足其中一个条件的记录就会被取出
+```
+
+**3. 通配符**
+
+```
+SELECT name FROM heros WHERE name LIKE '% 太 %'; -- % 可以匹配任意字符出现的任意次数
+SELECT name FROM heros WHERE name LIKE '_% 太 %'; -- _ 可以匹配一个字符
+```
+
+
+
+### 07丨什么是SQL函数？为什么使用SQL函数可能会带来问题？
+
+
+
