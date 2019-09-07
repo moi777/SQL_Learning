@@ -225,7 +225,6 @@ SELECT DISTINCT attack_range, name FROM heros; -- DISTINCT 是对后面所有列
 SELECT name, hp_max FROM heros ORDER BY hp_max DESC;
 
 SELECT name, hp_max FROM heros ORDER BY mp_max, hp_max DESC; -- 递增使用 ASC，递减使用 DESC
-
 ```
 
 
@@ -238,7 +237,6 @@ SELECT name, hp_max FROM heros ORDER BY hp_max DESC LIMIT 5; -- MySQL/PostgreSQL
 SELECT name, hp_max FROM heros ORDER BY hp_max DESC FETCH FIRST 5 ROWS ONLY; -- DB2 语法
 
 SELECT name, hp_max FROM heros WHERE ROWNUM <=5 ORDER BY hp_max DESC; -- Oracle 语法
-
 ```
 
 
@@ -300,5 +298,165 @@ SELECT name FROM heros WHERE name LIKE '_% 太 %'; -- _ 可以匹配一个字符
 
 ### 07丨什么是SQL函数？为什么使用SQL函数可能会带来问题？
 
+函数可以把我们经常使用的代码封装起来，需要的时候直接调用。这样既提高了代码效率，又提高了可维护性。
 
+SQL 提供了一些常用的内置函数，可以分为四类：算数函数、字符串函数、日期函数、转换函数。
+
+
+
+**算数函数**
+
+```
+SELECT ABS(-2); -- 取 -2 的绝对值
+
+SELECT MOD(101,3); -- 取 101 除以 3 的余数
+
+SELECT ROUND(37.25, 1); -- 37.23 四舍五入，保留 1 为销售
+```
+
+
+
+**字符串函数**
+
+```
+SELECT CONCAT('abc',123); -- 字符串拼接，运行结果为 abc123
+
+SELECT LENGTH('你好'); -- 计算字段长度，一个汉字算三个字符，一个数字或字母算一个字符，运行结果为 6
+
+SELECT CHAR_LENGTH('你好'); -- 计算字段长度，一个汉字、一个数字或字母算一个字符，运行结果为 2
+
+SELECT LOWER('ABC'); -- 将字符串中的字符转化为小写，运行结果为 abc
+
+SELECT UPPER('abc'); -- 将字符串中的字符转化为大写，运行结果为 ABC
+
+SELECT REPLACE('fabcd','abc',123); -- 替换函数，运行结果为 f123d
+
+SELECT SUBSTRING('fabcd',1,3); -- 截取字符串，运行结果为 fab
+```
+
+
+
+**日期函数**
+
+```
+SELECT CURRENT_DATE(); -- 系统当前日期
+
+SELECT CURRENT_TIME(); -- 系统当前时间，没有日期
+
+SELECT CURRENT_TIMESTAMP(); -- 系统当前时间，含日期和时间
+
+SELECT EXTRACT(YEAR FROM '2019-09-06'); -- 抽取具体的年，运行结果为 2019
+
+SELECT DATE('2019-09-06 12:00:07'); -- 返回时间的日期部分
+
+SELECT YEAR('2019-09-06 12:00:07'); -- 返回时间的年的部分
+
+SELECT MONTH('2019-09-06 12:00:07'); -- 返回时间的月的部分
+
+SELECT DAY('2019-09-06 12:00:07'); -- 返回时间的日的部分
+
+SELECT HOUR('2019-09-06 12:00:07'); -- 返回时间的时的部分
+
+SELECT MINUTE('2019-09-06 12:00:07'); -- 返回时间的分的部分
+
+SELECT SECOND('2019-09-06 12:00:07'); -- 返回时间的秒的部分
+```
+
+
+
+**转换函数**
+
+```
+SELECT CAST(123.123 AS INT); -- 浮点型和整数型不能互相转换，结果会报错
+
+SELECT CAST(123.125 AS DECIMAL(8,2)); -- 将 123.123 转换为两位小数，整数位加上小数位不能超过 8 位。注意使用 CAST 做转换时不会进行四舍五入，运行结果为 123.12
+
+SELECT COALESCE(NULL,1,2); -- 返回第一个非空数值，运行结果为 1
+```
+
+
+
+**使用 SQL 函数对王者荣耀数据库做处理**
+
+```
+SELECT name, ROUND(attack_growth, 1) FROM heros;
+
+SELECT MAX(hp_max) FROM heros;
+
+SELECT name, hp_max FROM heros WHERE hp_max = (SELECT MAX(hp_max) FROM heros);
+
+SELECT CHAR_LENGTH(name), name FROM heros;
+
+SELECT name, EXTRACT(YEAR FROM birthdate) FROM heros WHERE birthdate IS NOT NULL;
+
+SELECT name, YEAR(birthdate) FROM heros WHERE birthdate IS NOT NULL;
+
+SELECT * FROM heros WHERE DATE(birthdate) > '2016-10-01';
+
+SELECT AVG(hp_max), AVG(mp_max), MAX(attack_max) FROM heros WHERE DATE(birthdate) > '2016-10-01'
+```
+
+
+
+**为什么使用SQL函数可能会带来问题？**
+
+两点考虑：Python 版本的差异性、DBMS 之间的差异性。
+
+
+
+### 08丨什么是SQL的聚集函数，如何利用它们汇总表的数据？
+
+聚集函数是对一组数据进行汇总的函数，输入时一组数据的集合，输出是单个值。
+
+
+
+**聚集函数有哪些**
+
+SQL 中的聚集函数一共包括 5 个，COUNT()、MAX()、MIN()、SUM()、AVG()。
+
+```
+SELECT COUNT(*) FROM heros WHERE hp_max > 6000;
+
+SELECT COUNT(role_assist) FROM heros WHERE hp_max > 6000; -- COUNT(role_assist) 会忽略值为 NULL 的数据行，而 COUNT(*) 只是统计数据行数，不论字段的值是否为 NULL
+
+SELECT MAX(hp_max) FROM heros WHERE role_main = '射手' OR role_assist = '射手';
+
+SELECT COUNT(*), AVG(hp_max), MAX(mp_max), MIN(attack_max), SUM(defense_max) FROM heros WHERE role_main = '射手' OR role_assist = '射手'; -- AVG, MAX, MIN 会自动忽略值为 NULL 的数据行
+
+SELECT MIN(CONVERT(name USING gbk)), MAX(CONVERT(name USING gbk)) FROM heros; -- MAX 和 MIN 可用于字符串类型数据的统计，如果是英文字母，按照 A-Z 的顺序排列，如果是汉字则按照全拼拼音进行排列；gbk 表示 按汉字首字母排序
+
+SELECT COUNT(DISTINCT hp_max) FROM heros; -- 可以先使用 DISTINCT 去重，再使用聚集函数
+
+SELECT ROUND(AVG(DISTINCT hp_max), 2) FROM heros;
+```
+
+
+
+**如何对数据进行分组，并进行聚集统计**
+
+对数据进行分组，使用 GROUP BY 子句。
+
+```
+SELECT COUNT(*), role_main FROM heros GROUP BY role_main; --按照 role_main 对 heros 表的数据进行分组
+
+SELECT COUNT(*), role_assist FROM heros GROUP BY role_assist;
+
+SELECT COUNT(*) AS num, role_main, role_assist FROM heros GROUP BY role_main, role_assist ORDER BY num DESC;
+```
+
+
+
+**如何使用 HAVING 过滤分组，它与 WHERE 的区别是什么？**
+
+对分组进行过滤使用 HAVING，对数据行进行过滤使用 WHERE。
+
+```
+SELECT COUNT(*) AS num, role_main, role_assist FROM heros GROUP BY role_main, role_assist HAVING num > 5 ORDER BY num DESC; -- HAVING 用于对分组进行过滤
+
+SELECT COUNT(*) AS num, role_main, role_assist FROM heros WHERE hp_max >6000 GROUP BY role_main, role_assist HAVING num > 5 ORDER BY num DESC;
+```
+
+
+
+SELECT 查询中，关键字的顺序`SELECT ... FROM ... WHERE ... GROUP BY ... HAVING ... ORDER BY ...`
 
